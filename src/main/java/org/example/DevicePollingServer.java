@@ -57,12 +57,14 @@ public class DevicePollingServer {
 
     private final AtomicBoolean started = new AtomicBoolean(false);
 
+    private long totalTime = 0;
+
     public DevicePollingServer(int deviceCount) {
         this.deviceCount = deviceCount;
     }
 
 
-    private void stop() {
+    public void stop() {
         started.set(false);
 
         System.out.println("Initiate the synchronization stop...");
@@ -73,10 +75,12 @@ public class DevicePollingServer {
 
         syncTimersPool.shutdown();
 
+        totalTime = System.currentTimeMillis() - startTime;
+
         System.out.printf("Synchronization of %s devices stopped at %s with total execution time: %sms%n", deviceCount, LocalDateTime.now(), System.currentTimeMillis() - startTime);
     }
 
-    private void start() {
+    public void start() {
         started.set(true);
         System.out.printf("Initiate the synchronization of %s devices%n", deviceCount);
         for (int i = 0; i < deviceCount; i++) {
@@ -123,27 +127,7 @@ public class DevicePollingServer {
         };
     }
 
-    private void printResults() {
-        System.out.printf("%s variables were synchronized in %s seconds", counter.sum(), EXECUTION_TIME);
-
-    }
-
-    public static void main(String[] args) {
-        DevicePollingServer devicePollingServer = new DevicePollingServer(DEVICE_COUNT);
-        devicePollingServer.start();
-
-        waitForFinish();
-
-        devicePollingServer.stop();
-
-        devicePollingServer.printResults();
-    }
-
-    private static void waitForFinish() {
-        try {
-            Thread.sleep(EXECUTION_TIME);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+    public void printResults() {
+        System.out.printf("%s variables were synchronized in %s seconds", counter.sum(), totalTime);
     }
 }
