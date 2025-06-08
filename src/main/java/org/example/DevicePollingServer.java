@@ -10,6 +10,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -24,14 +25,13 @@ import org.example.sync.SynchronizationParameters;
 
 public class DevicePollingServer {
 
-    public static final int EXECUTION_TIME = 60_000;
-    public static final int DEVICE_COUNT = 100_000;
     public static final long SHORT_SYNC_PERIOD_MS = 500;
     public static final long LONG_SYNC_PERIOD_MS = 2_000;
     public static final long SHORT_EXECUTION_TIME_MS = 10;
     public static final long LONG_EXECUTION_TIME_MS = 500;
 
-    private final ScheduledThreadPoolExecutor syncTimersPool = new ScheduledThreadPoolExecutor(
+
+    private final ScheduledThreadPoolExecutor syncPlatformTimersPool = new ScheduledThreadPoolExecutor(
             100,
             Thread.ofPlatform().factory());
 
@@ -48,6 +48,8 @@ public class DevicePollingServer {
             },
             new ThreadPoolExecutor.CallerRunsPolicy());
 
+    private final ScheduledExecutorService syncVirtualTimersPool = Executors.newScheduledThreadPool(0, Thread.ofVirtual().factory());
+
     private final ExecutorService virtualSyncThreadsPool = Executors.newVirtualThreadPerTaskExecutor();
 
     private final int deviceCount;
@@ -56,8 +58,8 @@ public class DevicePollingServer {
     private long startTime;
 
     private final AtomicBoolean started = new AtomicBoolean(false);
-
-    private long totalTime = 0;
+    private long lastCounter = 0;
+    private long lastTimeStamp = System.currentTimeMillis();
 
     public DevicePollingServer(int deviceCount) {
         this.deviceCount = deviceCount;
@@ -71,26 +73,26 @@ public class DevicePollingServer {
         List<CompletableFuture<Void>> futures = managers.stream().map(sm -> CompletableFuture.runAsync(sm::stop)).toList();
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-        syncThreadsPool.shutdown();
+        virtualSyncThreadsPool.close();
 
-        syncTimersPool.shutdown();
+        syncVirtualTimersPool.shutdown();
 
-        totalTime = System.currentTimeMillis() - startTime;
-
-        System.out.printf("Synchronization of %s devices stopped at %s with total execution time: %sms%n", deviceCount, LocalDateTime.now(), System.currentTimeMillis() - startTime);
+        System.out.printf("Synchronization of %s devices stopped at %s with total execution time: %s ms%n", deviceCount, LocalDateTime.now(), System.currentTimeMillis() - startTime);
+        resultsSnapshot();
     }
 
     public void start() {
-        started.set(true);
         System.out.printf("Initiate the synchronization of %s devices%n", deviceCount);
         for (int i = 0; i < deviceCount; i++) {
-            SynchronizationManager synchronizationManager = new SynchronizationManager("Device-%s".formatted(i), syncTimersPool, syncThreadsPool, createSynchronizationItem());
+
+            SynchronizationManager synchronizationManager = new SynchronizationManager("Device-%s".formatted(i), syncVirtualTimersPool, virtualSyncThreadsPool, createSynchronizationItem());
             synchronizationManager.scheduleTask(new SimpleSynchronizationParameters(LONG_EXECUTION_TIME_MS), LONG_SYNC_PERIOD_MS);
             managers.add(synchronizationManager);
             synchronizationManager.start(new SimpleSynchronizationParameters(SHORT_EXECUTION_TIME_MS), SHORT_SYNC_PERIOD_MS, 0L);
         }
         startTime = System.currentTimeMillis();
         System.out.printf("Synchronization of %s devices started at %s%n", deviceCount, LocalDateTime.now());
+        started.set(true);
     }
 
     private Synchronizable<SynchronizationParameters> createSynchronizationItem() {
@@ -106,8 +108,7 @@ public class DevicePollingServer {
             @Override
             public void executeSynchronization(SynchronizationParameters parameters) {
                 try {
-                    if (!started.get())
-                    {
+                    if (!started.get()) {
                         return;
                     }
                     calculateMD5("SomeStringToMakeCPUWorks");
@@ -127,7 +128,9 @@ public class DevicePollingServer {
         };
     }
 
-    public void printResults() {
-        System.out.printf("%s variables were synchronized in %s seconds", counter.sum(), totalTime);
+    public void resultsSnapshot() {
+        System.out.printf("%s variables were synchronized in %s%n ms", counter.sum() - lastCounter, System.currentTimeMillis() - lastTimeStamp);
+        lastCounter = counter.sum();
+        lastTimeStamp = System.currentTimeMillis();
     }
 }
