@@ -31,11 +31,11 @@ public class DevicePollingServer {
     public static final long LONG_EXECUTION_TIME_MS = 500;
 
 
-    private final ScheduledThreadPoolExecutor syncPlatformTimersPool = new ScheduledThreadPoolExecutor(
+    private final ScheduledExecutorService syncPlatformTimersPool = new ScheduledThreadPoolExecutor(
             100,
             Thread.ofPlatform().factory());
 
-    private final ThreadPoolExecutor syncThreadsPool = new ThreadPoolExecutor(
+    private final ExecutorService syncPlatformThreadsPool = new ThreadPoolExecutor(
             10000,
             10000,
             60L, TimeUnit.SECONDS,
@@ -53,6 +53,7 @@ public class DevicePollingServer {
     private final ExecutorService virtualSyncThreadsPool = Executors.newVirtualThreadPerTaskExecutor();
 
     private final int deviceCount;
+    private final boolean virtual;
     private final List<SynchronizationManager> managers = new ArrayList<>();
     private final LongAdder counter = new LongAdder();
     private long startTime;
@@ -61,8 +62,9 @@ public class DevicePollingServer {
     private long lastCounter = 0;
     private long lastTimeStamp = System.currentTimeMillis();
 
-    public DevicePollingServer(int deviceCount) {
+    public DevicePollingServer(int deviceCount, boolean virtual) {
         this.deviceCount = deviceCount;
+        this.virtual = virtual;
     }
 
     public void stop() {
@@ -72,9 +74,13 @@ public class DevicePollingServer {
         List<CompletableFuture<Void>> futures = managers.stream().map(sm -> CompletableFuture.runAsync(sm::stop)).toList();
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-        virtualSyncThreadsPool.close();
-
-        syncVirtualTimersPool.shutdown();
+        if (!virtual) {
+            syncPlatformThreadsPool.close();
+            syncPlatformTimersPool.shutdown();
+        } else {
+            virtualSyncThreadsPool.close();
+            syncVirtualTimersPool.shutdown();
+        }
 
         System.out.printf("Synchronization of %s devices stopped at %s with total execution time: %s ms%n", deviceCount, LocalDateTime.now(), System.currentTimeMillis() - startTime);
         resultsSnapshot();
@@ -82,8 +88,19 @@ public class DevicePollingServer {
 
     public void start() {
         System.out.printf("Initiate the synchronization of %s devices%n", deviceCount);
+
+        ExecutorService syncService = virtualSyncThreadsPool;
+        if (!virtual) {
+            syncService = syncPlatformThreadsPool;
+        }
+
+        ScheduledExecutorService timerService = syncVirtualTimersPool;
+        if (!virtual) {
+            timerService = syncPlatformTimersPool;
+        }
+
         for (int i = 0; i < deviceCount; i++) {
-            SynchronizationManager synchronizationManager = new SynchronizationManager("Device-%s".formatted(i), syncVirtualTimersPool, virtualSyncThreadsPool, createSynchronizationItem());
+            SynchronizationManager synchronizationManager = new SynchronizationManager("Device-%s".formatted(i), timerService, syncService, createSynchronizationItem());
             synchronizationManager.scheduleTask(new SimpleSynchronizationParameters(LONG_EXECUTION_TIME_MS), LONG_SYNC_PERIOD_MS);
             managers.add(synchronizationManager);
             synchronizationManager.start(new SimpleSynchronizationParameters(SHORT_EXECUTION_TIME_MS), SHORT_SYNC_PERIOD_MS, 0L);
@@ -98,6 +115,8 @@ public class DevicePollingServer {
 
             private final ReentrantLock synchronizationLock = new ReentrantLock();
 
+            private String currentMd5;
+
             @Override
             public ReentrantLock getSynchronizationLock() {
                 return synchronizationLock;
@@ -109,7 +128,7 @@ public class DevicePollingServer {
                     if (!started.get()) {
                         return;
                     }
-                    calculateMD5("SomeStringToMakeCPUWorks");
+                    currentMd5 = calculateMD5();
                     Thread.sleep(parameters.executionTime());
                     counter.increment();
                 } catch (Exception e) {
@@ -117,12 +136,11 @@ public class DevicePollingServer {
                 }
             }
 
-            private String calculateMD5(String input) throws NoSuchAlgorithmException {
+            private String calculateMD5() throws NoSuchAlgorithmException {
                 MessageDigest md = MessageDigest.getInstance("MD5");
-                byte[] hashBytes = md.digest(input.getBytes());
+                byte[] hashBytes = md.digest("SomeStringToMakeCPUWorks".getBytes());
                 return HexFormat.of().formatHex(hashBytes);
             }
-
         };
     }
 

@@ -1,21 +1,27 @@
 package org.example;
 
-import static org.example.DevicePollingServer.LONG_EXECUTION_TIME_MS;
 import static org.example.DevicePollingServer.LONG_SYNC_PERIOD_MS;
 import static org.example.DevicePollingServer.SHORT_SYNC_PERIOD_MS;
 
 public class Main {
 
-    private static final int EXECUTION_TIME = 10_000;
-    private static final int DEVICE_COUNT = 5_000;
-
     public static void main(String[] args) {
+        int execTime = Integer.parseInt(args[0]);
+        int deviceCount = Integer.parseInt(args[1]);
+        boolean virtual = true;
+        if (args.length > 2) {
+            if (args[2].equals("-l")) {
+                virtual = false;
+            } else {
+                System.exit(1);
+            }
+        }
         printSystemInfo();
-        DevicePollingServer devicePollingServer = new DevicePollingServer(DEVICE_COUNT);
+        DevicePollingServer devicePollingServer = new DevicePollingServer(deviceCount, virtual);
         devicePollingServer.start();
-        devicePollingServer.waitForFinish(EXECUTION_TIME);
+        devicePollingServer.waitForFinish(execTime);
         devicePollingServer.stop();
-        System.out.printf("Expected variables to by synchronized: %s%n", DEVICE_COUNT * EXECUTION_TIME * ((1.0 / SHORT_SYNC_PERIOD_MS) +  (1.0 / LONG_SYNC_PERIOD_MS)));
+        System.out.printf("Expected variables to by synchronized: %s%n", deviceCount * execTime * ((1.0 / SHORT_SYNC_PERIOD_MS) + (1.0 / LONG_SYNC_PERIOD_MS)));
     }
 
     private static void printSystemInfo() {
