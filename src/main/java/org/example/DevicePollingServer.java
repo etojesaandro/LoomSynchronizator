@@ -65,7 +65,6 @@ public class DevicePollingServer {
         this.deviceCount = deviceCount;
     }
 
-
     public void stop() {
         started.set(false);
 
@@ -84,7 +83,6 @@ public class DevicePollingServer {
     public void start() {
         System.out.printf("Initiate the synchronization of %s devices%n", deviceCount);
         for (int i = 0; i < deviceCount; i++) {
-
             SynchronizationManager synchronizationManager = new SynchronizationManager("Device-%s".formatted(i), syncVirtualTimersPool, virtualSyncThreadsPool, createSynchronizationItem());
             synchronizationManager.scheduleTask(new SimpleSynchronizationParameters(LONG_EXECUTION_TIME_MS), LONG_SYNC_PERIOD_MS);
             managers.add(synchronizationManager);
@@ -129,8 +127,17 @@ public class DevicePollingServer {
     }
 
     public void resultsSnapshot() {
-        System.out.printf("%s variables were synchronized in %s%n ms", counter.sum() - lastCounter, System.currentTimeMillis() - lastTimeStamp);
+        System.out.printf("Total Execution Time: %s%n", System.currentTimeMillis() - lastTimeStamp);
+        System.out.printf("Actual variables were synchronized: %s%n", counter.sum() - lastCounter);
         lastCounter = counter.sum();
         lastTimeStamp = System.currentTimeMillis();
+    }
+
+    public void waitForFinish(int executionTime) {
+        try {
+            Thread.sleep(executionTime);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

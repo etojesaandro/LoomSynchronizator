@@ -1,5 +1,9 @@
 package org.example;
 
+import static org.example.DevicePollingServer.LONG_EXECUTION_TIME_MS;
+import static org.example.DevicePollingServer.LONG_SYNC_PERIOD_MS;
+import static org.example.DevicePollingServer.SHORT_SYNC_PERIOD_MS;
+
 public class Main {
 
     private static final int EXECUTION_TIME = 10_000;
@@ -7,21 +11,11 @@ public class Main {
 
     public static void main(String[] args) {
         printSystemInfo();
-
         DevicePollingServer devicePollingServer = new DevicePollingServer(DEVICE_COUNT);
         devicePollingServer.start();
-
-        waitForFinish();
-
+        devicePollingServer.waitForFinish(EXECUTION_TIME);
         devicePollingServer.stop();
-    }
-
-    private static void waitForFinish() {
-        try {
-            Thread.sleep(EXECUTION_TIME);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        System.out.printf("Expected variables to by synchronized: %s%n", DEVICE_COUNT * EXECUTION_TIME * ((1.0 / SHORT_SYNC_PERIOD_MS) +  (1.0 / LONG_SYNC_PERIOD_MS)));
     }
 
     private static void printSystemInfo() {
