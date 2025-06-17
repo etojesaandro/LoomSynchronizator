@@ -21,7 +21,7 @@ public class Main {
         devicePollingServer.start();
         devicePollingServer.waitForFinish(execTime);
         devicePollingServer.stop();
-        System.out.printf("Expected variables to by synchronized: %s%n", deviceCount * execTime * ((1.0 / SHORT_SYNC_PERIOD_MS) + (1.0 / LONG_SYNC_PERIOD_MS)));
+        System.out.printf("Expected variables to by synchronized: %s%n", (int) (deviceCount * execTime * ((1.0 / SHORT_SYNC_PERIOD_MS) + (1.0 / LONG_SYNC_PERIOD_MS))));
     }
 
     private static void printSystemInfo() {
