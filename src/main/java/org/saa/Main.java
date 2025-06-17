@@ -6,8 +6,8 @@ import static org.saa.DevicePollingServer.SHORT_SYNC_PERIOD_MS;
 public class Main {
 
     public static void main(String[] args) {
-        int execTime = Integer.parseInt(args[0]);
-        int deviceCount = Integer.parseInt(args[1]);
+        long execTime = Long.parseLong(args[0]);
+        long deviceCount = Long.parseLong(args[1]);
         boolean virtual = true;
         if (args.length > 2) {
             if (args[2].equals("-l")) {

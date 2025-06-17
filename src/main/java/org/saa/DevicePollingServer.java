@@ -52,7 +52,7 @@ public class DevicePollingServer {
 
     private final ExecutorService virtualSyncThreadsPool = Executors.newVirtualThreadPerTaskExecutor();
 
-    private final int deviceCount;
+    private final long deviceCount;
     private final boolean virtual;
     private final List<SynchronizationManager> managers = new ArrayList<>();
     private final LongAdder counter = new LongAdder();
@@ -62,7 +62,7 @@ public class DevicePollingServer {
     private long lastCounter = 0;
     private long lastTimeStamp = System.currentTimeMillis();
 
-    public DevicePollingServer(int deviceCount, boolean virtual) {
+    public DevicePollingServer(long deviceCount, boolean virtual) {
         this.deviceCount = deviceCount;
         this.virtual = virtual;
     }
@@ -151,7 +151,7 @@ public class DevicePollingServer {
         lastTimeStamp = System.currentTimeMillis();
     }
 
-    public void waitForFinish(int executionTime) {
+    public void waitForFinish(long executionTime) {
         try {
             Thread.sleep(executionTime);
         } catch (InterruptedException e) {
