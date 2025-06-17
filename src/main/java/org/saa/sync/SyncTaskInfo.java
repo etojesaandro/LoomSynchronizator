@@ -1,4 +1,4 @@
-package org.example.sync;
+package org.saa.sync;
 
 import java.util.concurrent.ScheduledFuture;
 

@@ -1,4 +1,4 @@
-package org.example.sync;
+package org.saa.sync;
 
 public record SimpleSynchronizationParameters(Long executionTime) implements SynchronizationParameters {
 

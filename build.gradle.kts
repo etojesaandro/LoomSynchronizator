@@ -1,16 +1,18 @@
 plugins {
-    id("java")
+    java
 }
 
-group = "org.example"
-version = "1.0-SNAPSHOT"
+group = "org.saa"
+version = "0.0.1"
 
 repositories {
     mavenCentral()
 }
 
-dependencies {
-
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = "org.saa.Main"
+    }
 }
 
 tasks.test {

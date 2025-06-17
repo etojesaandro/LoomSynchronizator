@@ -1,7 +1,7 @@
-package org.example;
+package org.saa;
 
-import static org.example.DevicePollingServer.LONG_SYNC_PERIOD_MS;
-import static org.example.DevicePollingServer.SHORT_SYNC_PERIOD_MS;
+import static org.saa.DevicePollingServer.LONG_SYNC_PERIOD_MS;
+import static org.saa.DevicePollingServer.SHORT_SYNC_PERIOD_MS;
 
 public class Main {
 
@@ -21,7 +21,7 @@ public class Main {
         devicePollingServer.start();
         devicePollingServer.waitForFinish(execTime);
         devicePollingServer.stop();
-        System.out.printf("Expected variables to by synchronized: %s%n", (int) (deviceCount * execTime * ((1.0 / SHORT_SYNC_PERIOD_MS) + (1.0 / LONG_SYNC_PERIOD_MS))));
+        System.out.printf("Expected variables to by synchronized: %s%n", (long) (deviceCount * execTime * ((1.0 / SHORT_SYNC_PERIOD_MS) + (1.0 / LONG_SYNC_PERIOD_MS))));
     }
 
     private static void printSystemInfo() {

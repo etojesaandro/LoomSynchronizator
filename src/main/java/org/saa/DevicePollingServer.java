@@ -1,4 +1,4 @@
-package org.example;
+package org.saa;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -18,10 +18,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.example.sync.SimpleSynchronizationParameters;
-import org.example.sync.Synchronizable;
-import org.example.sync.SynchronizationManager;
-import org.example.sync.SynchronizationParameters;
+import org.saa.sync.SimpleSynchronizationParameters;
+import org.saa.sync.Synchronizable;
+import org.saa.sync.SynchronizationManager;
+import org.saa.sync.SynchronizationParameters;
 
 public class DevicePollingServer {
 
