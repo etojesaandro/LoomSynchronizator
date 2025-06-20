@@ -27,8 +27,6 @@ public class SynchronizationManager {
 
     private final Synchronizable<SynchronizationParameters> synchronizable;
 
-    private final String name;
-
     private SyncTaskInfo mainTask;
 
     private final Map<Long, SyncTaskInfo> additionalTasks = new HashMap<>();
@@ -41,9 +39,8 @@ public class SynchronizationManager {
     private final AtomicBoolean hasScheduledTask = new AtomicBoolean(false);
     private volatile boolean started;
 
-    public SynchronizationManager(String name, ScheduledExecutorService syncTimersPool, ExecutorService syncExecutorService, Synchronizable<SynchronizationParameters> synchronizable) {
+    public SynchronizationManager(ScheduledExecutorService syncTimersPool, ExecutorService syncExecutorService, Synchronizable<SynchronizationParameters> synchronizable) {
         super();
-        this.name = name;
         this.syncTimersPool = syncTimersPool;
         this.syncExecutorService = syncExecutorService;
         this.synchronizable = synchronizable;
@@ -55,7 +52,7 @@ public class SynchronizationManager {
     }
 
     private void scheduleMainSyncTask(SynchronizationParameters parameters, long mainSyncPeriod, long firstSyncDelay) {
-        ScheduledFuture future = syncTimersPool.scheduleAtFixedRate(createSyncTask(parameters), firstSyncDelay, mainSyncPeriod, TimeUnit.MILLISECONDS);
+        ScheduledFuture<?> future = syncTimersPool.scheduleAtFixedRate(createSyncTask(parameters), firstSyncDelay, mainSyncPeriod, TimeUnit.MILLISECONDS);
         mainTask = new SyncTaskInfo(future, parameters, mainSyncPeriod);
     }
 
@@ -126,7 +123,7 @@ public class SynchronizationManager {
     }
 
 
-    private void executeSynchronization(SynchronizationParameters initialParameters) {
+    private synchronized void executeSynchronization(SynchronizationParameters initialParameters) {
         syncLock.lock();
         try {
             hasScheduledTask.set(false);

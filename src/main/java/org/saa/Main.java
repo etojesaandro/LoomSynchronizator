@@ -8,11 +8,14 @@ public class Main {
     public static void main(String[] args) {
         long execTime = Long.parseLong(args[0]);
         long deviceCount = Long.parseLong(args[1]);
-        int platformThreads = Integer.parseInt(args[2]);
+        int platformThreads = 200;
         boolean virtual = true;
-        if (args.length > 3) {
-            if (args[3].equals("-l")) {
+        if (args.length > 2) {
+            if (args[2].equals("-l")) {
                 virtual = false;
+                if (args.length > 3) {
+                    platformThreads = Integer.parseInt(args[3]);
+                }
             } else {
                 System.exit(1);
             }

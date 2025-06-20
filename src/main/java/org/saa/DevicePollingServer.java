@@ -45,7 +45,6 @@ public class DevicePollingServer {
     private final boolean virtual;
     private final List<SynchronizationManager> managers = new ArrayList<>();
     private final LongAdder counter = new LongAdder();
-    private final long platformThreads;
     private long startTime;
 
     private final AtomicBoolean started = new AtomicBoolean(false);
@@ -55,7 +54,6 @@ public class DevicePollingServer {
     public DevicePollingServer(long deviceCount, int platformThreads, boolean virtual) {
         this.deviceCount = deviceCount;
         this.virtual = virtual;
-        this.platformThreads = platformThreads;
         syncPlatformThreadsPool = new ThreadPoolExecutor(
                 platformThreads,
                 platformThreads,
@@ -103,7 +101,7 @@ public class DevicePollingServer {
         }
 
         for (int i = 0; i < deviceCount; i++) {
-            SynchronizationManager synchronizationManager = new SynchronizationManager("Device-%s".formatted(i), timerService, syncService, createSynchronizationItem());
+            SynchronizationManager synchronizationManager = new SynchronizationManager(timerService, syncService, createSynchronizationItem());
             synchronizationManager.scheduleTask(new SimpleSynchronizationParameters(LONG_EXECUTION_TIME_MS), LONG_SYNC_PERIOD_MS);
             managers.add(synchronizationManager);
             synchronizationManager.start(new SimpleSynchronizationParameters(SHORT_EXECUTION_TIME_MS), SHORT_SYNC_PERIOD_MS, 0L);
