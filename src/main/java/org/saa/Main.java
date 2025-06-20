@@ -8,16 +8,17 @@ public class Main {
     public static void main(String[] args) {
         long execTime = Long.parseLong(args[0]);
         long deviceCount = Long.parseLong(args[1]);
+        int platformThreads = Integer.parseInt(args[2]);
         boolean virtual = true;
-        if (args.length > 2) {
-            if (args[2].equals("-l")) {
+        if (args.length > 3) {
+            if (args[3].equals("-l")) {
                 virtual = false;
             } else {
                 System.exit(1);
             }
         }
         printSystemInfo();
-        DevicePollingServer devicePollingServer = new DevicePollingServer(deviceCount, virtual);
+        DevicePollingServer devicePollingServer = new DevicePollingServer(deviceCount, platformThreads, virtual);
         devicePollingServer.start();
         devicePollingServer.waitForFinish(execTime);
         devicePollingServer.stop();

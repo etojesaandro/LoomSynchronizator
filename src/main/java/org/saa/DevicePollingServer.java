@@ -35,18 +35,7 @@ public class DevicePollingServer {
             100,
             Thread.ofPlatform().factory());
 
-    private final ExecutorService syncPlatformThreadsPool = new ThreadPoolExecutor(
-            10000,
-            10000,
-            60L, TimeUnit.SECONDS,
-            new LinkedBlockingQueue<>(100_000),
-            runnable -> {
-                Thread thread = Thread.ofPlatform().factory().newThread(runnable);
-                thread.setName("Synchronizer");
-                thread.setDaemon(true);
-                return thread;
-            },
-            new ThreadPoolExecutor.CallerRunsPolicy());
+    private final ExecutorService syncPlatformThreadsPool;
 
     private final ScheduledExecutorService syncVirtualTimersPool = Executors.newScheduledThreadPool(0, Thread.ofVirtual().factory());
 
@@ -56,15 +45,29 @@ public class DevicePollingServer {
     private final boolean virtual;
     private final List<SynchronizationManager> managers = new ArrayList<>();
     private final LongAdder counter = new LongAdder();
+    private final long platformThreads;
     private long startTime;
 
     private final AtomicBoolean started = new AtomicBoolean(false);
     private long lastCounter = 0;
     private long lastTimeStamp = System.currentTimeMillis();
 
-    public DevicePollingServer(long deviceCount, boolean virtual) {
+    public DevicePollingServer(long deviceCount, int platformThreads, boolean virtual) {
         this.deviceCount = deviceCount;
         this.virtual = virtual;
+        this.platformThreads = platformThreads;
+        syncPlatformThreadsPool = new ThreadPoolExecutor(
+                platformThreads,
+                platformThreads,
+                60L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(100_000),
+                runnable -> {
+                    Thread thread = Thread.ofPlatform().factory().newThread(runnable);
+                    thread.setName("Synchronizer");
+                    thread.setDaemon(true);
+                    return thread;
+                },
+                new ThreadPoolExecutor.CallerRunsPolicy());
     }
 
     public void stop() {
